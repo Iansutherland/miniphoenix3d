@@ -23,14 +23,14 @@ export default function BasicMap()
         <TileLayer
             attribution='Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>'
             url="https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}"
-            accessToken={getSauce()}
+            accessToken={process.env.REACT_APP_SAUCE}
             id='mapbox/satellite-v9'
         />
         {data ? data.map((spot: WifiSite) => {
              console.log(`${parseFloat(spot.X)}, ${parseFloat(spot.Y)}`);
             return(
             <Marker key={spot._id} position={[parseFloat(parseFloat(spot.Y).toFixed(3)), parseFloat(parseFloat(spot.X).toFixed(3))]}
-            icon={new Icon({iconUrl: './assets/generated.svg', iconSize: [25, 41], iconAnchor: [12, 41]})}>
+            icon={new Icon({iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png', iconSize: [25, 41], iconAnchor: [12, 41]})}>
                 <Popup>
                     {spot.SITE_NAME}
                 </Popup>
@@ -40,9 +40,4 @@ export default function BasicMap()
         ""}
     </MapContainer>
     );
-}
-
-function getSauce()
-{
-    return process.env.REACT_APP_SAUCE;
 }
