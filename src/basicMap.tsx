@@ -1,9 +1,10 @@
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import "leaflet/dist/leaflet.css";
 import PhoenixDataService from './services/PhoenixDataService';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import WifiSite from './models/WifiSite';
+import Pin from './components/Pin';
 
 export default function BasicMap()
 {
@@ -29,15 +30,25 @@ export default function BasicMap()
         {data ? data.map((spot: WifiSite) => {
              console.log(`${parseFloat(spot.X)}, ${parseFloat(spot.Y)}`);
             return(
-            <Marker key={spot._id} position={[parseFloat(parseFloat(spot.Y).toFixed(3)), parseFloat(parseFloat(spot.X).toFixed(3))]}
-            icon={new Icon({iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png', iconSize: [25, 41], iconAnchor: [12, 41]})}>
-                <Popup>
-                    {spot.SITE_NAME}
-                </Popup>
-            </Marker>
+                <Pin X={spot.X} Y={spot.Y} _id={spot._id}>
+                    <Popup>
+                    {getWifiSiteData(spot)}
+                    </Popup>
+                </Pin>
+                
             );
         }) :
         ""}
     </MapContainer>
+    );
+}
+
+function getWifiSiteData(site: WifiSite)
+{
+    return (
+        <React.Fragment>
+            <p>SiteName: {site.SITE_NAME}</p>
+            <p>Type: {site.FACILITY_TYPE}</p>
+        </React.Fragment>
     );
 }

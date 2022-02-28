@@ -1,6 +1,3 @@
-import L, { LatLng } from "leaflet";
-import { json } from "stream/consumers";
-
 export default interface WifiSite {
     _id: string;
 	X: string;
