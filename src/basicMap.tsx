@@ -1,4 +1,4 @@
-import { LayersControl, MapContainer, Popup, TileLayer } from 'react-leaflet';
+import { LayerGroup, LayersControl, MapContainer, Popup, TileLayer } from 'react-leaflet';
 import "leaflet/dist/leaflet.css";
 import L from 'leaflet';
 import PhoenixDataService from './services/PhoenixDataService';
@@ -45,18 +45,23 @@ export default function BasicMap()
                         attribution={attributionText}
                         url = 'https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png'/>
                 </LayersControl.BaseLayer>
-
+                <LayersControl.Overlay checked name="Free Wifi Spots">
+                    <LayerGroup>
+                        {data ? data.map((spot: WifiSite) => {
+                            return(
+                                <Pin key={spot._id} X={spot.X} Y={spot.Y}>
+                                    <Popup>
+                                    {getWifiSiteData(spot)}
+                                    </Popup>
+                                </Pin>
+                            );
+                        }) :
+                        ""}
+                </LayerGroup>
+                </LayersControl.Overlay>
+                
             </LayersControl>
-        {data ? data.map((spot: WifiSite) => {
-            return(
-                <Pin key={spot._id} X={spot.X} Y={spot.Y}>
-                    <Popup>
-                    {getWifiSiteData(spot)}
-                    </Popup>
-                </Pin>
-            );
-        }) :
-        ""}
+        
     </MapContainer>
     );
 }
