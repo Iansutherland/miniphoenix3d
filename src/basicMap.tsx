@@ -1,14 +1,22 @@
-import { MapContainer, TileLayer, Popup } from 'react-leaflet';
-import { Icon } from 'leaflet';
+import { MapContainer, Popup } from 'react-leaflet';
 import "leaflet/dist/leaflet.css";
+import L from 'leaflet';
 import PhoenixDataService from './services/PhoenixDataService';
 import React, { useState, useEffect } from 'react';
 import WifiSite from './models/WifiSite';
 import Pin from './components/Pin';
+import LayerControl from './components/layer/LayerControl';
+import MapBoxUrl, { mapBoxAttribution} from './services/MapBoxService';
 
 export default function BasicMap()
 {
     const [data, setData] = useState<WifiSite[]>();
+    const baseMaps = {
+        Streets: L.tileLayer(MapBoxUrl(), {id: 'mapbox/streets-v11', tileSize: 512, zoomOffset: -1, attribution: mapBoxAttribution}),
+        Light: L.tileLayer(MapBoxUrl(), {id: 'mapbox/light-v10', tileSize: 512, zoomOffset: -1, attribution: mapBoxAttribution}),
+        Satellite: L.tileLayer(MapBoxUrl(), {id: 'mapbox/satellite-v9', tileSize: 512, zoomOffset: -1, attribution: mapBoxAttribution}),
+    }
+    const [baseMap, setBaseMap] = useState(baseMaps.Satellite);
     const phoenixDataService = new PhoenixDataService();
 
     useEffect(() => {
@@ -20,22 +28,14 @@ export default function BasicMap()
     }, []);
     
     return(
-        <MapContainer id='map' center={[33.448376, -112.074036]} zoom={13}>
-        <TileLayer
-            attribution='Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>'
-            url="https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}"
-            accessToken={process.env.REACT_APP_SAUCE}
-            id='mapbox/satellite-v9'
-        />
+        <MapContainer id='map' center={[33.448376, -112.074036]} zoom={13} layers={[baseMap]}>
         {data ? data.map((spot: WifiSite) => {
-             console.log(`${parseFloat(spot.X)}, ${parseFloat(spot.Y)}`);
             return(
-                <Pin X={spot.X} Y={spot.Y} _id={spot._id}>
+                <Pin key={spot._id} X={spot.X} Y={spot.Y}>
                     <Popup>
                     {getWifiSiteData(spot)}
                     </Popup>
                 </Pin>
-                
             );
         }) :
         ""}
