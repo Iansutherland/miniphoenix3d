@@ -6,24 +6,32 @@ import React, { useState, useEffect } from 'react';
 import WifiSite from './models/WifiSite';
 import Pin from './components/Pin';
 import MapBoxUrl, { mapBoxAttribution} from './services/MapBoxService';
+import VehicleFeedEntity from './models/VehicleFeed/VehicleFeedEntity';
+import VehicleFeedData from './models/VehicleFeed/VehicleFeedData';
+import Vehicle from './models/VehicleFeed/Vehicle';
 
 export default function BasicMap()
 {
-    const [data, setData] = useState<WifiSite[]>();
-    const baseMaps = {
-        Streets: L.tileLayer(MapBoxUrl(), {id: 'mapbox/streets-v11', tileSize: 512, zoomOffset: -1, attribution: mapBoxAttribution}),
-        Light: L.tileLayer(MapBoxUrl(), {id: 'mapbox/light-v10', tileSize: 512, zoomOffset: -1, attribution: mapBoxAttribution}),
-        Satellite: L.tileLayer(MapBoxUrl(), {id: 'mapbox/satellite-v9', tileSize: 512, zoomOffset: -1, attribution: mapBoxAttribution}),
-    }
+    const [wifiData, setWifiData] = useState<WifiSite[]>();
+    const [vehicleFeed, setVehicleFeed] = useState<VehicleFeedData[]>();
     const attributionText: string = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>';
     const phoenixDataService = new PhoenixDataService();
+
 
     useEffect(() => {
         (async () => {
             const response = await phoenixDataService.GetOutdoorPublicWifiSites(10);
             if(response)
-                setData(response);
+                setWifiData(response);
+
+            const vehicleFeedResponse = await phoenixDataService.GetVehicleFeed();
+            if(vehicleFeedResponse)
+                setVehicleFeed(vehicleFeedResponse);
         })();
+
+        return () => {
+            phoenixDataService.CancelRequests();
+        }
     }, []);
     
     return(
@@ -45,13 +53,13 @@ export default function BasicMap()
                         attribution={attributionText}
                         url = 'https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png'/>
                 </LayersControl.BaseLayer>
-                <LayersControl.Overlay checked name="Free Wifi Spots">
+                <LayersControl.Overlay name="Free Wifi Spots">
                     <LayerGroup>
-                        {data ? data.map((spot: WifiSite) => {
+                        {wifiData ? wifiData.map((spot: WifiSite) => {
                             return(
                                 <Pin key={spot._id} X={spot.X} Y={spot.Y}>
                                     <Popup>
-                                    {getWifiSiteData(spot)}
+                                    {getWifiSiteMetaData(spot)}
                                     </Popup>
                                 </Pin>
                             );
@@ -59,14 +67,33 @@ export default function BasicMap()
                         ""}
                 </LayerGroup>
                 </LayersControl.Overlay>
-                
+                <LayersControl.Overlay checked name="Vehicle Feed">
+                    <LayerGroup>
+                        {vehicleFeed ? vehicleFeed?.map((data: VehicleFeedData) => {
+                            const vehicle: Vehicle = data.vehicle;
+                            return(
+                                <Pin key={data.id} X={vehicle.position.longitude.toString()} Y={vehicle.position.latitude.toString()}>
+                                    <Popup>
+                                    {getVehicleFeedMetaData(vehicle)}
+                                    </Popup>
+                                </Pin>
+                            );
+                        })
+                        : ""}
+                    </LayerGroup>
+                </LayersControl.Overlay>
+                <LayersControl.Overlay name="Specified Vehicles">
+                    <LayerGroup>
+                    {getSpecifiedVehicles(vehicleFeed)}
+                    </LayerGroup>
+                </LayersControl.Overlay>
             </LayersControl>
         
     </MapContainer>
     );
 }
 
-function getWifiSiteData(site: WifiSite)
+function getWifiSiteMetaData(site: WifiSite)
 {
     return (
         <React.Fragment>
@@ -74,4 +101,33 @@ function getWifiSiteData(site: WifiSite)
             <p>Type: {site.FACILITY_TYPE}</p>
         </React.Fragment>
     );
+}
+
+function getVehicleFeedMetaData(vehicle: Vehicle) {
+    return (
+        <React.Fragment>
+            <p>vehicleID: {vehicle.vehicle.id}</p>
+            {/* <p>trip: {vehicle.trip.scheduleRelationship + "ID:" + vehicle.trip.tripId}</p> */}
+        </React.Fragment>
+    )
+}
+
+function getSpecifiedVehicles(vehicleFeed: VehicleFeedData[] | undefined){
+    const specifiedVehicleIds = ["5038", "5207", "5632"];
+    const filteredVehicles: VehicleFeedData[] | null = vehicleFeed ? vehicleFeed?.filter(x => specifiedVehicleIds.includes(x.vehicle.vehicle.id)) : null;
+    return(
+        <React.Fragment>
+            {filteredVehicles ? filteredVehicles.map((data: VehicleFeedData) => {
+                            const vehicle: Vehicle = data.vehicle;
+                            return(
+                                <Pin key={data.id} X={vehicle.position.longitude.toString()} Y={vehicle.position.latitude.toString()}>
+                                    <Popup>
+                                    {getVehicleFeedMetaData(vehicle)}
+                                    </Popup>
+                                </Pin>
+                            );
+                        })
+                        : ""}
+        </React.Fragment>
+    )
 }
